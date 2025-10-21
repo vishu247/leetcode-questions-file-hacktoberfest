@@ -1,0 +1,52 @@
+class Solution:
+    def sequenceReconstruction(self, org: List[int], seqs: List[List[int]]) -> bool:
+        n = len(org)
+        # Build graph
+        from collections import defaultdict, deque
+
+        graph = defaultdict(set)
+        indegree = defaultdict(int)
+
+        # Initialize nodes from seqs (so we know which numbers are present)
+        for seq in seqs:
+            for num in seq:
+                if num < 1 or num > n:
+                    return False  # invalid number
+                if num not in indegree:
+                    indegree[num] = 0
+                if num not in graph:
+                    graph[num] = set()
+
+        # If not all numbers in org appear in indegree, cannot reconstruct fully
+        for num in org:
+            if num not in indegree:
+                return False
+
+        # Add edges
+        for seq in seqs:
+            for i in range(1, len(seq)):
+                prev, curr = seq[i-1], seq[i]
+                if curr not in graph[prev]:
+                    graph[prev].add(curr)
+                    indegree[curr] += 1
+
+        # Queue of zero indegree nodes
+        q = deque()
+        for num in indegree:
+            if indegree[num] == 0:
+                q.append(num)
+
+        result = []
+        while q:
+            if len(q) > 1:
+                # More than one choice => not unique
+                return False
+            node = q.popleft()
+            result.append(node)
+            for nei in graph[node]:
+                indegree[nei] -= 1
+                if indegree[nei] == 0:
+                    q.append(nei)
+
+        # Check if result matches org exactly
+        return len(result) == n and result == org
